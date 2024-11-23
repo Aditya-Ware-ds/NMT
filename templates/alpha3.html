@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Translate Text</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .bot-icon {
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 80px;
+            height: 80px;
+            background-color: #4CAF50;
+            color: white;
+            border-radius: 50%;
+            margin-bottom: 20px;
+        }
+
+        textarea {
+            resize: none;
+        }
+
+        .dialogue-cloud {
+            position: absolute;
+            top: -60px;
+            left: 100%;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 10px;
+            font-size: 0.9em;
+            width: 150px;
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 1;
+            transition: opacity 0.5s ease, visibility 0.5s ease;
+            color: black;
+        }
+
+        .dialogue-cloud::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: -10px;
+            transform: translateY(-50%);
+            border-width: 10px;
+            border-style: solid;
+            border-color: transparent white transparent transparent;
+        }
+
+        .hidden {
+            visibility: hidden;
+            opacity: 0;
+        }
+
+        .visible {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        .card {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            width: 450px;
+            text-align: center;
+        }
+
+        .card-header h2 {
+            margin: 0 0 10px;
+            font-size: 1.5em;
+        }
+
+        .card-header p {
+            margin: 0;
+            font-size: 0.9em;
+            color: #555;
+        }
+
+        .card-content label {
+            display: block;
+            margin: 10px 0 5px;
+        }
+
+        .card-content textarea {
+            width: 100%;
+            padding: 10px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+            font-size: 1em;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 20px;
+        }
+
+        .controls select {
+            width: 60%;
+            padding: 5px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+        }
+
+        .controls button {
+            padding: 10px 15px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .controls button:hover {
+            background-color: #45a049;
+        }
+
+        .fade-out {
+            opacity: 0;
+            transition: opacity 0.5s ease-out;
+        }
+
+        .fade-in {
+            opacity: 1;
+            transition: opacity 0.5s ease-in;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="bot-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 8V4H8" />
+                <rect width="16" height="12" x="4" y="8" rx="2" />
+                <path d="M2 14h2" />
+                <path d="M20 14h2" />
+                <path d="M15 13v2" />
+                <path d="M9 13v2" />
+            </svg>
+            <!-- Dialogue Cloud for Translated Text -->
+            <div id="dialogue-cloud" class="dialogue-cloud">Hi, I am Toto. Your own Language Translator.</div>
+        </div>
+        <div class="card">
+            <div class="card-header">
+                <h2>Translate Text</h2>
+                <p>Enter text below and the robot will translate it for you.</p>
+            </div>
+            <div class="card-content">
+                <label for="text-to-translate">Text to Translate</label>
+                <textarea id="text-to-translate" placeholder="Enter text to translate..." rows="4"></textarea>
+
+                <div class="controls">
+                    <select id="language-select">
+                        <option value="" disabled selected>Select language</option>
+                        <option value="mr">Marathi</option>
+                        <option value="hi">Hindi</option>
+                        <option value="ml">Malayalam</option>
+                    </select>
+                    <button id="translate-btn">Translate</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('translate-btn').addEventListener('click', async function() {
+            const textToTranslate = document.getElementById('text-to-translate').value;
+            const language = document.getElementById('language-select').value;
+
+            if (!textToTranslate || !language) {
+                alert('Please enter text and select a language.');
+                return;
+            }
+
+            // Send data to Flask backend
+            const response = await fetch('/translate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    text: textToTranslate,
+                    lang: language
+                }),
+            });
+
+            const data = await response.json();
+            const translatedText = data.translated_text;
+
+            // Handle errors
+            if (response.status !== 200) {
+                alert(data.error || 'Translation failed');
+                return;
+            }
+
+            // Update the dialogue cloud with translated text
+            const dialogueCloud = document.getElementById('dialogue-cloud');
+            dialogueCloud.classList.add('fade-out');
+
+            setTimeout(() => {
+                dialogueCloud.textContent = translatedText;
+                dialogueCloud.classList.remove('fade-out');
+                dialogueCloud.classList.add('fade-in');
+                
+                // Trigger text-to-speech after translation
+                speakText(translatedText, language);
+            }, 500); // Match the fade-out duration
+        });
+
+        // Function to perform Text-to-Speech
+        function speakText(text, language) {
+            const synth = window.speechSynthesis;
+            const utterance = new SpeechSynthesisUtterance(text);
+
+            // Set language for speech synthesis
+            const langMapping = {
+                'mr': 'mr-IN', // Marathi
+                'hi': 'hi-IN', // Hindi
+                'ml': 'ml-IN'  // Malayalam
+            };
+
+            utterance.lang = langMapping[language] || 'en-US'; // Default to English if not found
+
+            synth.speak(utterance);
+        }
+
+        // Initially show "Hi, I am Toto."
+        window.onload = () => {
+            const dialogueCloud = document.getElementById('dialogue-cloud');
+            dialogueCloud.classList.add('fade-in');
+        };
+    </script>
+</body>
+</html>
